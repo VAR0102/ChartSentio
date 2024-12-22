@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Emotion Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    canvas {
+      width: 100%;
+      height: 400px;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-right: 15px;
+      margin-bottom: 5px;
+    }
+    .legend-color {
+      width: 15px;
+      height: 15px;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Month Emotion Chart</h1>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(99, 218, 99);"></div>
+      <span>Relaxed</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(244, 244, 88);"></div>
+      <span>Happy</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: black;"></div>
+      <span>Angry</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(119, 158, 235);"></div>
+      <span>Sad</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(182, 41, 182);"></div>
+      <span>Fearful</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(217, 15, 15);"></div>
+      <span>Stressed</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(132, 128, 132);"></div>
+      <span>Bored</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(112, 27, 27);"></div>
+      <span>Disgusted</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(241, 218, 218);"></div>
+      <span>Unknown</span>
+    </div>
+  </div>
+
+  <canvas id="emotionChart"></canvas>
+
+  <script>
+    // Fetch JSON data
+    fetch('datamonth.json')
+      .then(response => response.json())
+      .then(data => {
+        const monthlyData = data.monthly_data;
+
+        // Extract weeks and emotions
+        const weeks = monthlyData.map(entry => entry.week);
+        const emotions = monthlyData.map(entry => entry.avg_emotion);
+
+        // Set colors based on emotions
+        const backgroundColors = emotions.map(emotion => {
+          switch (emotion) {
+            case 'Relaxed': return 'rgb(99, 218, 99)';
+                case 'Happy': return 'rgb(244, 244, 88)';
+                case 'Angry': return 'black';
+                case 'Sad': return 'rgb(119, 158, 235)';
+                case 'Fearful': return 'rgb(182, 41, 182)';
+                case 'Stressed': return 'rgb(217, 15, 15)';
+                case 'Bored': return 'rgb(132, 128, 132)';
+                case 'Disgusted': return 'rgb(112, 27, 27)';
+                default: return 'rgb(241, 218, 218)';
+          }
+        });
+
+        // Average HRV data for the chart
+        const avgHRV = monthlyData.map(entry => entry.avg_hrv_ms);
+
+        // Chart configuration
+        const ctx = document.getElementById('emotionChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: weeks,
+            datasets: [{
+              label: 'Average HRV (ms)',
+              data: avgHRV,
+              backgroundColor: backgroundColors,
+              borderColor: 'black',
+              borderWidth: 1,
+              labels: emotions // Emotion names for tooltips
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(tooltipItem) {
+                    const dataset = tooltipItem.dataset;
+                    const emotion = dataset.labels[tooltipItem.dataIndex];
+                    return `Emotion: ${emotion}, HRV: ${tooltipItem.raw} ms`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { beginAtZero: true, title: { display: true, text: 'Week' } },
+              y: { beginAtZero: true, title: { display: true, text: 'Average HRV (ms)' } }
+            }
+          }
+        });
+      })
+      .catch(error => console.error('Error loading JSON file:', error));
+  </script>
+
+</body>
+</html>

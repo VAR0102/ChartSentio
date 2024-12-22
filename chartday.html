@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emotion Chart Based on Ranges</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    canvas {
+      width: 100%;
+      height: 400px;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-right: 15px;
+      margin-bottom: 5px;
+    }
+    .legend-color {
+      width: 15px;
+      height: 15px;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Daily Emotion Chart</h1>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(99, 218, 99);"></div>
+      <span>Relaxed</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(244, 244, 88);"></div>
+      <span>Happy</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: black;"></div>
+      <span>Angry</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(119, 158, 235);"></div>
+      <span>Sad</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(182, 41, 182);"></div>
+      <span>Fearful</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(217, 15, 15);"></div>
+      <span>Stressed</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(132, 128, 132);"></div>
+      <span>Bored</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(112, 27, 27);"></div>
+      <span>Disgusted</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: rgb(241, 218, 218);"></div>
+      <span>Unknown</span>
+    </div>
+  </div>
+
+  <canvas id="emotionChart"></canvas>
+
+  <script>
+    const emotionRanges = {
+      "Relaxed": { "HR": [50, 70], "BP_Systolic": [90, 120], "BP_Diastolic": [60, 80], "Movement": [0.01, 0.03], "Skin_Conductance": [0.5, 1.0], "Temperature": [31, 33], "HRV": [50, 100] },
+      "Happy": { "HR": [70, 90], "BP_Systolic": [110, 130], "BP_Diastolic": [70, 85], "Movement": [0.05, 0.1], "Skin_Conductance": [1.0, 2.0], "Temperature": [32, 34], "HRV": [60, 100] },
+      "Angry": { "HR": [90, 110], "BP_Systolic": [130, 150], "BP_Diastolic": [80, 95], "Movement": [0.1, 0.3], "Skin_Conductance": [2.0, 4.0], "Temperature": [30, 33], "HRV": [20, 50] },
+      "Sad": { "HR": [60, 80], "BP_Systolic": [100, 120], "BP_Diastolic": [60, 80], "Movement": [0.03, 0.05], "Skin_Conductance": [1.0, 2.0], "Temperature": [30, 32], "HRV": [30, 60] },
+      "Fearful": { "HR": [90, 120], "BP_Systolic": [130, 150], "BP_Diastolic": [85, 100], "Movement": [0.1, 0.3], "Skin_Conductance": [2.0, 5.0], "Temperature": [28, 32], "HRV": [20, 50] },
+      "Stressed": { "HR": [85, 110], "BP_Systolic": [120, 140], "BP_Diastolic": [80, 90], "Movement": [0.05, 0.15], "Skin_Conductance": [2.0, 4.0], "Temperature": [29, 32], "HRV": [20, 50] },
+      "Bored": { "HR": [60, 75], "BP_Systolic": [100, 120], "BP_Diastolic": [60, 80], "Movement": [0.02, 0.05], "Skin_Conductance": [0.5, 1.5], "Temperature": [30, 32], "HRV": [40, 70] },
+      "Disgusted": { "HR": [85, 100], "BP_Systolic": [120, 130], "BP_Diastolic": [75, 85], "Movement": [0.05, 0.2], "Skin_Conductance": [1.5, 3.0], "Temperature": [30, 32], "HRV": [20, 50] }
+    };
+
+    function detectEmotion(data) {
+      for (let emotion in emotionRanges) {
+        const range = emotionRanges[emotion];
+        if (
+          data["HR (bpm)"] >= range.HR[0] && data["HR (bpm)"] <= range.HR[1] &&
+          data["BP (Systolic)"] >= range.BP_Systolic[0] && data["BP (Systolic)"] <= range.BP_Systolic[1] &&
+          data["BP (Diastolic)"] >= range.BP_Diastolic[0] && data["BP (Diastolic)"] <= range.BP_Diastolic[1] &&
+          data["Movement (m/s²)"] >= range.Movement[0] && data["Movement (m/s²)"] <= range.Movement[1] &&
+          data["Skin Conductance (µS)"] >= range.Skin_Conductance[0] && data["Skin Conductance (µS)"] <= range.Skin_Conductance[1] &&
+          data["Temperature (°C)"] >= range.Temperature[0] && data["Temperature (°C)"] <= range.Temperature[1] &&
+          data["HRV (ms)"] >= range.HRV[0] && data["HRV (ms)"] <= range.HRV[1]
+        ) {
+          return emotion;
+        }
+      }
+      return "Unknown";
+    }
+
+    fetch('dataday.json')
+      .then(response => response.json())
+      .then(userData => {
+        const hours = userData.map(item => item.Hour);
+        const chartData = {
+          labels: hours,
+          datasets: [{
+            data: userData.map(item => item["HRV (ms)"]),
+            backgroundColor: userData.map(item => {
+              const emotion = detectEmotion(item);
+              switch (emotion) {
+                case 'Relaxed': return 'rgb(99, 218, 99)';
+                case 'Happy': return 'rgb(244, 244, 88)';
+                case 'Angry': return 'black';
+                case 'Sad': return 'rgb(119, 158, 235)';
+                case 'Fearful': return 'rgb(182, 41, 182)';
+                case 'Stressed': return 'rgb(217, 15, 15)';
+                case 'Bored': return 'rgb(132, 128, 132)';
+                case 'Disgusted': return 'rgb(112, 27, 27)';
+                default: return 'rgb(241, 218, 218)';
+              }
+            }),
+            borderColor: 'black',
+            borderWidth: 1,
+            labels: userData.map(item => detectEmotion(item)) // Emotion names for tooltips
+          }]
+        };
+
+        const options = {
+          indexAxis: 'x',
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(tooltipItem) {
+                  const dataset = tooltipItem.dataset;
+                  return dataset.labels[tooltipItem.dataIndex]; // Display the emotion name
+                }
+              }
+            }
+          },
+          scales: {
+            x: { beginAtZero: true },
+            y: { beginAtZero: true }
+          }
+        };
+
+        const ctx = document.getElementById('emotionChart').getContext('2d');
+        new Chart(ctx, { type: 'bar', data: chartData, options: options });
+      })
+      .catch(error => console.error('Error loading the JSON file:', error));
+  </script>
+
+</body>
+</html>
+
